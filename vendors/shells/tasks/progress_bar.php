@@ -60,7 +60,7 @@ class ProgressBarTask extends Shell {
 		if ($remaining < 60) {
 			return sprintf('%d secs', $remaining);
 		} else {
-			return sprintf('%d mins, %d secs', floor($remaining / 60), $remaining % 60);
+			return sprintf('%d mins, %02d secs', floor($remaining / 60), $remaining % 60);
 		}
 	}
 }
