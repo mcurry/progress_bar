@@ -117,7 +117,7 @@ class ProgressBarTask extends Shell {
  */
 	function niceRemaining() {
 		$now = time();
-		if($now == $this->startTime) {
+		if($now == $this->startTime || $this->done == 0) {
 			return '?';
 		}
 		
