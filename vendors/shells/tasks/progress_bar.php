@@ -97,7 +97,7 @@ class ProgressBarTask extends Shell {
 		$perc = round($this->done / $this->total, 3);
 		$doneSize = floor($perc * $this->size);
 
-		echo sprintf(
+		$this->out(sprintf(
 			"\r[%s>%s] %.01f%% %d/%d %s %s%s",
 			str_repeat("-", $doneSize),
 			str_repeat(" ", $this->size - $doneSize),
@@ -105,8 +105,20 @@ class ProgressBarTask extends Shell {
 			$this->done, $this->total,
 			$this->niceRemaining(),
 			__('remaining', true),
-			str_repeat(' ', 10));
+			str_repeat(' ', 10)));
 		flush();
+	}
+
+/**
+ * Overrides standard shell output to allow /r without /n
+ *
+ * @see Shell::out
+ * @param mixed $message A string to output
+ * @return integer Returns the number of bytes returned from writing to stdout.
+ * @access public
+ */
+	function out($message = null) {
+		return $this->Dispatch->stdout($message, false);
 	}
 
 /**
