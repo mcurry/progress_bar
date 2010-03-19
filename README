@@ -15,7 +15,7 @@ A shell task for showing a simple progress bar.
 /* Instructions */
  1. Download the plugin to app/plugins/progress_bar.
  2. Include the task in your shell.
-		var $task = array('ProgressBar');
+		var $tasks = array('ProgressBar');
  3. Start the progress bar by calling ProgressBar::start with the total number of whatever you are processing.
  		$this->ProgressBar->start(count($loops));
  4. Within each loop:
