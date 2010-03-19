@@ -77,8 +77,8 @@ class ProgressBarTask extends Shell {
  * @return void
  * @access public
  */
-	function next() {
-		$this->done++;
+	function next($inc=1) {
+		$this->done += $inc;
 		$this->set();
 	}
 
