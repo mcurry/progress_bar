@@ -51,6 +51,14 @@ class ProgressBarTask extends Shell {
 	var $startTime = null;
 
 /**
+ * String length for the previous line.  Used to overwrite hanging chars/
+ *
+ * @var int
+ * @access public
+ */
+	var $strLenPrevLine = null;
+	
+/**
  * Execute the task
  *
  * @return void
@@ -97,15 +105,19 @@ class ProgressBarTask extends Shell {
 		$perc = round($this->done / $this->total, 3);
 		$doneSize = floor($perc * $this->size);
 
-		$this->out(sprintf(
-			"\r[%s>%s] %.01f%% %d/%d %s %s%s",
+		$output = sprintf(
+			"\r[%s>%s] %.01f%% %d/%d %s %s",
 			str_repeat("-", $doneSize),
 			str_repeat(" ", $this->size - $doneSize),
 			$perc * 100,
 			$this->done, $this->total,
 			$this->niceRemaining(),
-			__('remaining', true),
-			str_repeat(' ', 10)));
+			__('remaining', true));
+		
+		$spaces = max(0, $this->strLenPrevLine - (count($output)));
+		$this->strLenPrevLine = count($output);
+		
+		$this->out($output . str_repeat(' ', $spaces));
 		flush();
 	}
 
