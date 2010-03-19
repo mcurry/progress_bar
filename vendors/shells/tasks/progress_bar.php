@@ -114,8 +114,8 @@ class ProgressBarTask extends Shell {
 			$this->niceRemaining(),
 			__('remaining', true));
 		
-		$spaces = max(0, $this->strLenPrevLine - (count($output)));
-		$this->strLenPrevLine = count($output);
+		$spaces = max(0, $this->strLenPrevLine - (strlen($output)));
+		$this->strLenPrevLine = strlen($output);
 		
 		$this->out($output . str_repeat(' ', $spaces));
 		flush();
