@@ -4,7 +4,7 @@
  *
  * Test Cases for progress bar shell task
  *
- * PHP versions 4 and 5
+ * PHP version 5
  *
  * Copyright (c) 2010 Matt Curry
  * www.PseudoCoder.com
@@ -28,16 +28,55 @@ if (!class_exists('ShellDispatcher')) {
 	ob_end_clean();
 }
 
+/**
+ * TestProgressBarTask class
+ *
+ * @uses          ProgressBarTask
+ * @package       progress_bar
+ * @subpackage    progress_bar.tests.cases.vendors.shells.tasks
+ */
+class TestProgressBarTask extends ProgressBarTask {
+
+/**
+ * Output generated during test
+ *
+ * @var array
+ * @access public
+ */
+	public $messages = array();
+
+/**
+ * niceRemaining proxy method
+ *
+ * @return void
+ * @access public
+ */
+	function niceRemaining() {
+		return $this->_niceRemaining();
+	}
+
+	function messages($clear = true) {
+		$return = $this->messages;
+		if ($clear) {
+			$this->messages = array();
+		}
+		return $return;
+	}
+
+	function out($message) {
+		$this->messages[] = $message;
+	}
+}
+
 Mock::generatePartial(
 	'ShellDispatcher', 'TestProgressBarTaskMockShellDispatcher',
 	array('getInput', 'stdout', 'stderr', '_stop', '_initEnvironment')
 );
 
 Mock::generatePartial(
-	'ProgressBarTask', 'MockProgressBarTask',
-	array('in', '_stop', 'err', 'out')
+	'TestProgressBarTask', 'MockProgressBarTask',
+	array('in', '_stop', 'err')
 );
-
 /**
  * ProgressBarTask Test class
  *
@@ -52,11 +91,11 @@ class ProgressBarTaskTest extends CakeTestCase {
  * @return void
  * @access public
  */
-	function startTest() {
-		$this->Dispatcher =& new TestProgressBarTaskMockShellDispatcher();
+	public function startTest() {
+		$this->Dispatcher = new TestProgressBarTaskMockShellDispatcher();
 		$this->Dispatcher->shellPaths = App::path('shells');
-		$this->Task =& new MockProgressBarTask($this->Dispatcher);
-		$this->Task->Dispatch =& $this->Dispatcher;
+		$this->Task = new MockProgressBarTask($this->Dispatcher);
+		$this->Task->Dispatch = $this->Dispatcher;
 		$this->Task->path = TMP . 'tests' . DS;
 	}
 
@@ -66,17 +105,17 @@ class ProgressBarTaskTest extends CakeTestCase {
  * @return void
  * @access public
  */
-	function endTest() {
+	public function endTest() {
 		ClassRegistry::flush();
 	}
-	
+
 /**
  * testStartup method
  *
  * @return void
  * @access public
  */
-	function testStartup() {
+	public function testStartup() {
 		$total = 100;
 		$now = time();
 		$this->Task->start($total);
@@ -86,12 +125,77 @@ class ProgressBarTaskTest extends CakeTestCase {
 	}
 
 /**
+ * testSimpleFormatting method
+ *
+ * @return void
+ * @access public
+ */
+	public function testSimpleFormatting() {
+		$this->Task->start(100);
+		$this->Task->next(1);
+		$result = end($this->Task->messages());
+		$this->assertPattern('@\[>\s+\] 1.0% 1/100.*remaining$@', $result);
+
+		$this->Task->next(49);
+		$result = end($this->Task->messages());
+		$this->assertPattern('@\[-+>\s+\] 50.0% 50/100.*remaining$@', $result);
+
+		$this->Task->next(50);
+		$result = end($this->Task->messages());
+		$this->assertPattern('@\[-+>\] 100.0% 100/100.*remaining$@', $result);
+	}
+
+/**
+ * testSimpleBoundaries method
+ *
+ * Test/demonstrate what happens when you bail early or overrun.
+ *
+ * @return void
+ * @access public
+ */
+	public function testSimpleBoundaries() {
+		$this->Task->start(100);
+		$this->Task->next(50);
+		$this->Task->finish(1);
+
+		$result = end($this->Task->messages());
+		$this->assertPattern('@\[-{25}>] 50.0% 50/100.*remaining$@', $result);
+
+		$this->Task->start(100);
+		$this->Task->next(150);
+
+		$result = end($this->Task->messages());
+		$this->assertPattern('@\[-{25}>\] 150.0% 150/100.*remaining$@', $result);
+	}
+
+/**
+ * testMessageUsage method
+ *
+ * @return void
+ * @access public
+ */
+	public function testMessageUsage() {
+		$this->Task->message('Running your 100 step process');
+		$this->Task->start(100);
+		$this->Task->terminalWidth = 100;
+
+		$this->Task->next(1);
+		$result = end($this->Task->messages());
+		$this->assertPattern('@Running your 100 step process\s+1.0% 1/100.*remaining \[>\s+\]$@', $result);
+
+		$this->Task->message('Changed and muuuuuuuuuuuuuuuuuch longer message');
+		$this->Task->next(1);
+		$result = end($this->Task->messages());
+		$this->assertPattern('@Changed and muuuuuuuuuuuuuuuuuch longer messa... 2.0% 2/100.*remaining \[>\s+\]$@', $result);
+	}
+
+/**
  * testExecuteNothing method
  *
  * @return void
  * @access public
  */
-	function testExecuteNothing() {
+	public function testExecuteNothing() {
 		$this->assertNull($this->Task->execute());
 	}
 
@@ -101,7 +205,7 @@ class ProgressBarTaskTest extends CakeTestCase {
  * @return void
  * @access public
  */
-	function testNext() {
+	public function testNext() {
 		$this->Task->start(100);
 		$this->Task->next();
 		$this->assertIdentical($this->Task->done, 1);
@@ -112,8 +216,8 @@ class ProgressBarTaskTest extends CakeTestCase {
  *
  * @return void
  * @access public
- */	
-	function testNiceRemainingUnknown() {
+ */
+	public function testNiceRemainingUnknown() {
 		$this->Task->start(100);
 
 		$expected = '?';
@@ -130,7 +234,7 @@ class ProgressBarTaskTest extends CakeTestCase {
  * @return void
  * @access public
  */
-	function testNiceRemainingBasic() {
+	public function testNiceRemainingBasic() {
 		// 2 seconds per iteration, should take 20 seconds total.
 		$total = 10;
 		$delay = 2;
@@ -157,7 +261,7 @@ class ProgressBarTaskTest extends CakeTestCase {
 			$this->Task->next();
 		}
 		$result = $this->Task->niceRemaining();
-		$expected = '5 secs';
+		$expected = '05 secs';
 		$this->assertEqual($result, $expected);
 	}
 
@@ -167,7 +271,7 @@ class ProgressBarTaskTest extends CakeTestCase {
  * @return void
  * @access public
  */
-	function testNiceRemainingMinutes() {
+	public function testNiceRemainingMinutes() {
 		// 2 seconds per iteration, should take 120 seconds total.
 		$total = 60;
 		$delay = 2;
@@ -179,7 +283,7 @@ class ProgressBarTaskTest extends CakeTestCase {
 			$this->Task->next();
 		}
 		$result = $this->Task->niceRemaining();
-		
+
 		$expected = '1 min, 54 secs';
 		$this->assertEqual($result, $expected);
 
@@ -194,7 +298,7 @@ class ProgressBarTaskTest extends CakeTestCase {
 			$this->Task->next();
 		}
 		$result = $this->Task->niceRemaining();
-		
+
 		$expected = '3 mins, 54 secs';
 		$this->assertEqual($result, $expected);
 	}
@@ -205,7 +309,7 @@ class ProgressBarTaskTest extends CakeTestCase {
  * @return void
  * @access public
  */
-	function testSet() {
+	public function testSet() {
 		$this->Task->start(100);
 		$this->Task->set(50);
 		$this->assertEqual($this->Task->done, 50);
