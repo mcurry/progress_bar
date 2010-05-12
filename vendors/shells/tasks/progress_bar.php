@@ -200,12 +200,14 @@ class ProgressBarTask extends Shell {
  * @return void
  * @access public
  */
-	public function start($total) {
+	public function start($total, $clear = true) {
 		$this->total = $total;
 		$this->done = 0;
 		$this->startTime = time();
 		$this->_setTerminalWidth();
-		$this->out('', 1);
+		if ($clear) {
+			$this->out('', 1);
+		}
 	}
 
 /**
