@@ -155,6 +155,7 @@ class ProgressBarTask extends Shell {
 			$this->done = min($done, $this->total);
 		}
 
+		$this->total = max(1, $this->total);
 		$perc = round($this->done / $this->total, 3);
 		if ($doneSize === null) {
 			$doneSize = floor(min($perc, 1) * $this->size);
