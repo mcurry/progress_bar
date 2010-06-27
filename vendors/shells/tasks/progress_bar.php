@@ -254,6 +254,7 @@ class ProgressBarTask extends Shell {
 				$width = 80;
 			}
 		}
+		$this->size = min(max(10, $width / 4), $this->size);
 		$this->terminalWidth = $width;
 	}
 }
